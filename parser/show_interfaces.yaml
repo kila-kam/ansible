@@ -1,0 +1,62 @@
+---
+- name: PARSER META DATA
+  parser_metadata:
+    version: 1.0
+    command: show interfaces
+    network_os: ios
+
+- name: MATCH SECTION AND STORE LIST
+  pattern_match:
+    regex: "^(\\S+) is.*(?:up|down),"
+    match_all: yes
+    match_greedy: yes
+  register: section
+  export: yes
+
+- name: MATCH INTERFACE VALUES LOOP STORE VAR  AND EXPORT FACTS
+  pattern_group:
+    - name: match name
+      pattern_match:
+        regex: "^(\\S+)"
+        content: "{{ item }}"
+      register: name
+
+    - name: match CRC
+      pattern_match:
+        regex: ",\\s+(\\d+)\\sCRC"
+        content: "{{ item }}"
+      register: CRC
+
+    - name: match Duplex
+      pattern_match:
+        regex: "(Full-duplex|Half-duplex|Auto-duplex),\\s\\S+"
+        content: "{{ item }}"
+      register: Duplex
+
+    - name: match Speed
+      pattern_match:
+        regex: "duplex,\\s(\\S+)"
+        content: "{{ item }}"
+      register: Speed
+
+  loop: "{{ section }}"
+  register: interfaces
+  export: yes
+
+- name: generate json data structure
+  json_template:
+      template:
+       - key: data
+         object:
+           - key: name
+             value: "{{ item.name.matches.0 |  regex_replace('(stEthernet|gabitEthernet)', '') }}"
+           - key: CRC
+             value: "{{ item.CRC.matches.0 }}"
+           - key: Duplex
+             value: "{{ item.Duplex.matches.0 }}"
+           - key: Speed
+             value: "{{ item.Speed.matches.0 }}"
+
+  loop: "{{ interfaces }}"
+  export: yes
+  register: interface_facts
