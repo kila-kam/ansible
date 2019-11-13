@@ -1,0 +1,30 @@
+---
+- name: PARSER META DATA
+  parser_metadata:
+    version: 1.0
+    command: show mac address
+    network_os: ios
+
+- name: MATCH PATTERN
+  pattern_match:
+    regex: "^(\\*|\\s+)\\s+\\d+\\s+(\\S+)\\s+(dynamic|static)\\s+Yes\\s+(-|\\d+)\\s+(\\S+)" #6509
+#    regex: "^\\s+\\S+\\s+(\\S+)\\s+\\S+\\s+(\\S+)" #3750
+    match_all: yes
+  register: section
+
+- name: GENERATE JSON DATA STRUCTURE
+  json_template:
+    template:
+     - key: data
+       object:
+        - key: mac
+          value: "{{ item.matches.1 }}"
+#          value: "{{ item.matches.0 }}"
+        - key: name
+          value: "{{ item.matches.4 }}"
+#          value: "{{ item.matches.1 }}"
+  loop: "{{ section }}"
+  export: yes
+  register: mac_address_facts
+
+
