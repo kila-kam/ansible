@@ -1,0 +1,14 @@
+---
+- name:  configure junos devices
+  hosts: all
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+    - name: load different syslog configs  based on junos firewall 
+      junos_config:
+       provider: "{{ cred }}"
+       src: "/etc/ansible/configs/{{ inventory_hostname }}.txt"
+       update: merge
+       comment: CONFIGURED BY ANSIBLE

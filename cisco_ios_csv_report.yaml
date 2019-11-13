@@ -1,0 +1,106 @@
+---
+- name: SET UP REPORT DIRECTORY
+  hosts:
+  - localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - name: GENERATE REPORT DIRECTORY NAMES
+    set_fact:
+     report_dir: "/opt/network/reports"
+  - name: generate report build directory name
+    set_fact:
+     build_dir: "/opt/network/build"
+  - name: confirm/create report directory
+    file:
+     path: "{{ report_dir }}"
+     state: directory
+  - name: delete old report build directory
+    file:
+     path: "{{ build_dir }}"
+     state: absent
+  - name: confirm/create new report build directory
+    file:
+     path: "{{ build_dir }}"
+     state: directory
+
+- name: GATHER  DATA
+  hosts: all
+  gather_facts: no
+  connection: local
+
+  roles:
+    - ansible-network.network-engine
+
+  tasks:
+  - name: CAPTURE SHOW COMMANDS
+    ios_command:
+      provider: "{{ cred }}"
+      commands:
+        - show interfaces
+        - show ip arp
+        - show mac address-table
+    register: output
+
+  - name: DISPLAY THE OUTPUT
+    debug: var=output.stdout
+
+  - name: PARSE THE INTERFACE OUTPUT
+    command_parser:
+      file: "parser/show_interfaces.yaml"
+      content: "{{ output.stdout[0] }}"
+
+
+  - name: PARSE THE ARP OUTPUT
+    command_parser:
+      file: "parser/show_ip_arp.yaml"
+      content: "{{ output.stdout[1] }}"
+
+
+  - name: PARSE THE MAC TABLE
+    command_parser:
+      file: "parser/show_mac_address_table.yaml"
+      content: "{{ output.stdout[2] }}"
+
+
+#  - name: DISPLAY THE DATA
+
+  - name: SAVE DEVICE INFORMATION USING TEMPLATE
+    template:
+     src: template/cisco.j2
+     dest: "{{ hostvars.localhost.build_dir }}/{{ inventory_hostname }}.txt"
+
+- name: ASSEMBLE DEVICE REPORT
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+   systime: "{{ ansible_date_time.time | replace(':', '-') }}"
+   timestamp: "{{ ansible_date_time.date }}_{{ systime }}"
+   report_file: "{{ report_dir }}/BH_CRC_Report_{{ timestamp }}.csv"
+
+  tasks:
+  - name: COPY COLUMN HEADERS FILE
+    copy:
+     src: template/AAA_cisco-facts-columns.txt
+     dest: "{{ build_dir }}/"
+
+
+  - name: ASSEMBLE DEVICE FILES INTO NEW REPORT
+    assemble:
+         src: "{{ build_dir }}"
+         dest: "{{ report_file }}"
+
+
+  - name: SEND EMAIL
+    mail:
+     host: smtp.test.com
+     port: 25
+     from: noc-noreply@test.com
+     to:
+      - admin <admin@test.com>
+     subject: CRC error report
+     attach: "{{ report_file }}"
+     body:  please find attached report
+    delegate_to: localhost
