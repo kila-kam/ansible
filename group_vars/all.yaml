@@ -1,0 +1,11 @@
+---
+ cred:
+  host: "{{ ansible_host }}"
+  username: ansible
+  password: ansible
+#  authorize: yes
+  port: 22
+  timeout: 120
+ 
+ config: ansible_project
+ user_data_path: report_dir
