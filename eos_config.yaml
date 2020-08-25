@@ -1,0 +1,22 @@
+---
+- name: arista test
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+  - name: run show version on remote devices
+    eos_config:
+     src: eos_template.j2
+#     commands:
+#      - interface Et1
+#      - no switchport
+#      - ip address 10.0.0.1/30
+#      - no shutdown
+     
+#    register: output
+
+
+#  - name: show output
+#    debug:
+#     var: output.stdout

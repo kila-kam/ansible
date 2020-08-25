@@ -1,0 +1,16 @@
+---
+- name: arista test
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+  - name: run show version on remote devices
+    eos_command:
+     commands: show version
+    register: output
+
+
+  - name: show output
+    debug:
+     var: output.stdout

@@ -1,0 +1,18 @@
+---
+- name: arista test
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+#  connection: local
+
+  tasks:
+  - name: run show version on remote devices
+    nxos_command:
+#     provider: "{{ cred }}"
+     commands: show version
+    register: output
+
+
+  - name: show output
+    debug:
+     var: output.stdout
