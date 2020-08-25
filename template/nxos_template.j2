@@ -1,0 +1,14 @@
+hostname {{ host_name }}
+
+
+interface loopback 0
+ip address  {{ loop_ip_addr }} 
+no shutdown
+ip router ospf {{ ospf_process_id }} area 0.0.0.0 
+
+{% for intf in l2_interfaces %}
+interface {{ intf.interface }}
+no switchport
+no shutdown
+{% endfor %}
+

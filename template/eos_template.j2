@@ -1,0 +1,13 @@
+{% for device in devices %}
+{% if device.interface == "Lo0" %}
+interface {{ device.interface }}
+ip address {{ device.ip_address }}
+no shutdown
+{% endif %}
+{% if device.interface == "Et1" %}
+interface {{ device.interface }}
+no switchport
+ip address {{ device.ip_address }}
+no shutdown
+{% endif %}
+{% endfor %}
